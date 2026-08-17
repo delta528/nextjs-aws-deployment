@@ -1,0 +1,56 @@
+name: Test
+on:
+  workflow_call:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Node Environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: "npm"
+      - name: Install dependencies
+        run: npm ci
+      - name: Check for formatting errors
+        run: npm run format
+      - name: Check for ESLint errors
+        run: npm run lint
+      - name: Check for Type Errors
+        run: npm run typecheck
+      - name: Build Project
+        run: npm run build
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: build
+          path: .next/
+      - name: Run Unit Tests 
+        run: npm run test
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: Coverage report 
+          path: coverage/
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} 
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+      - name: Run E2E Tests
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: Playwright report 
+          path: playwright-report/
+      - name: Send a slack message on failure 
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          payload-file-path: "./.github/slack/test-failure-slack-payload.json"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

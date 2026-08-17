@@ -1,0 +1,6 @@
+* @delta528
+*.js @delta528
+*ts @delta528
+*tsx @delta528
+/e2e/ @delta528
+
